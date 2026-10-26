@@ -72,6 +72,8 @@ test('server rejects unsigned webhook and serves / and /health', async () => {
     const pr = await (await fetch(base + '/pricing')).text();
     assert.match(pr, /Pilot: free for early users/); assert.match(pr, /\$49\/mo/); assert.match(pr, /\$199\/mo/); assert.doesNotMatch(pr, /<script/);
     assert.match(await (await fetch(base + '/')).text(), /href="\/pricing"/);
+    assert.match(await (await fetch(base + '/privacy')).text(), /Fix memory/);
+    assert.match(await (await fetch(base + '/support')).text(), /Fitzyracing1@gmail\.com/);
   } finally { srv.close(); }
 });
 
