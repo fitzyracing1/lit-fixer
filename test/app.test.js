@@ -165,3 +165,20 @@ test('ignores the try-branch run on the dark base sha (branch creation push)', a
   const lit = await handle('workflow_run', ev('lit-fixer/try-1', 'success'), opts(gh, d));
   assert.ok(lit.pr);
 });
+
+test('oracle: more workflow catalog fixes', () => {
+  const fx = id => CATALOG.find(f => f.id === id).apply;
+  assert.strictEqual(fx('bump-cache')('uses: actions/cache@v2\nuses: actions/cache/restore@v3'), 'uses: actions/cache@v4\nuses: actions/cache/restore@v4');
+  assert.strictEqual(fx('bump-cache')('uses: actions/cache@v4'), 'uses: actions/cache@v4');
+  assert.strictEqual(fx('bump-artifact')('actions/upload-artifact@v3 actions/download-artifact@v1'), 'actions/upload-artifact@v4 actions/download-artifact@v4');
+  assert.strictEqual(fx('bump-setup-python')('actions/setup-python@v4'), 'actions/setup-python@v5');
+  assert.strictEqual(fx('python-off-eol')("  python-version: '3.7'\n"), "  python-version: '3.12'\n");
+  assert.strictEqual(fx('python-off-eol')('  python-version: 3.11\n'), '  python-version: 3.11\n');
+  assert.strictEqual(fx('python-off-eol')("  python: ['3.6', '3.10']"), "  python: ['3.10', '3.12']");
+  assert.strictEqual(fx('python-off-eol')("  python-version: [3.8, 3.12]"), "  python-version: [3.12]");
+  assert.strictEqual(fx('runs-on-latest')('runs-on: ubuntu-20.04\nruns-on: ubuntu-18.04\nruns-on: ubuntu-22.04'), 'runs-on: ubuntu-latest\nruns-on: ubuntu-latest\nruns-on: ubuntu-22.04');
+  assert.strictEqual(fx('bump-setup-java')('actions/setup-java@v3 actions/setup-java@v1'), 'actions/setup-java@v4 actions/setup-java@v1');
+  assert.strictEqual(fx('bump-setup-go')('actions/setup-go@v3'), 'actions/setup-go@v5');
+  const r = propose([{ path: '.github/workflows/a.yml', sha: 'x', content: 'runs-on: ubuntu-20.04\n' }]);
+  assert.strictEqual(r.fix.id, 'runs-on-latest');
+});
