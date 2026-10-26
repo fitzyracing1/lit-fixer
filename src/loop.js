@@ -38,12 +38,14 @@ async function nextTry(ctx, s, full) {
   if (!p) { ep.done = 'no more fixes in catalog'; log(`${full}: no more fixes`); return { stopped: ep.done }; }
   const branch = `${PREFIX}${rs.next++}`;
   await gh.req(token, 'POST', `/repos/${full}/git/refs`, { ref: `refs/heads/${branch}`, sha: ep.baseSha });
+  let headSha = null;
   for (const c of p.changes) {
-    await gh.req(token, 'PUT', `/repos/${full}/contents/${c.path}`, {
+    const r = await gh.req(token, 'PUT', `/repos/${full}/contents/${c.path}`, {
       message: `lit-fixer: ${p.fix.title}`, content: Buffer.from(c.content).toString('base64'), sha: c.sha, branch,
     });
+    if (r && r.commit && r.commit.sha) headSha = r.commit.sha;
   }
-  ep.tried.push(p.fix.id); ep.current = { branch, fix: p.fix.id };
+  ep.tried.push(p.fix.id); ep.current = { branch, fix: p.fix.id, headSha };
   rs.attemptsToday++;
   log(`${full}: trying ${p.fix.id} on ${branch}`);
   return { trying: branch, fix: p.fix.id };
@@ -55,6 +57,8 @@ async function onTryResult(ctx, s, full, run, defaultBranch) {
   const rs = repoState(s, full);
   const ep = rs.episode;
   if (!ep || !ep.current || ep.current.branch !== run.head_branch || ep.done) return { ignored: 'not the current try' };
+  // Creating the branch at the dark base sha also fires a run; only judge the fix commit.
+  if (ep.current.headSha ? run.head_sha !== ep.current.headSha : run.head_sha === ep.baseSha) return { ignored: 'run is not for the fix commit' };
   const fix = CATALOG.find(f => f.id === ep.current.fix);
   if (conclusionIsLit(run.conclusion)) {
     s.memory[fix.id] = (s.memory[fix.id] || 0) + 1;

@@ -37,6 +37,7 @@ function fakeGh({ wf = OLD_WF } = {}) {
       calls.push({ method, url, body });
       if (method === 'GET' && /contents\/\.github\/workflows\?/.test(url)) return [{ type: 'file', name: 'ci.yml', path: '.github/workflows/ci.yml' }];
       if (method === 'GET' && /contents\/\.github\/workflows\/ci\.yml/.test(url)) return { sha: 'f1', content: Buffer.from(wf).toString('base64') };
+      if (method === 'PUT') return { commit: { sha: 'fix1' } };
       if (method === 'POST' && url.endsWith('/pulls')) return { html_url: 'https://github.com/o/r/pull/1' };
       return {};
     },
@@ -46,7 +47,7 @@ const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'lf-'));
 const repo = { full_name: 'o/r', default_branch: 'main' };
 const ev = (branch, conclusion, extra = {}) => ({
   action: 'completed', installation: { id: 1 }, repository: repo,
-  workflow_run: { head_branch: branch, head_sha: 'abc', conclusion, html_url: `https://github.com/o/r/actions/runs/${branch}`, ...extra },
+  workflow_run: { head_branch: branch, head_sha: branch.startsWith('lit-fixer/') ? 'fix1' : 'abc', conclusion, html_url: `https://github.com/o/r/actions/runs/${branch}`, ...extra },
 });
 const quiet = () => {};
 const opts = (gh, dataDir, cfg = { maxSteps: 3, perDay: 10 }) => ({ gh, dataDir, cfg, log: quiet });
@@ -152,4 +153,15 @@ test('private key loads from env and signs a JWT', () => {
   const pem = privateKey.export({ type: 'pkcs1', format: 'pem' });
   assert.equal(loadPrivateKey({ env: { PRIVATE_KEY_BASE64: Buffer.from(pem).toString('base64') } }), pem);
   assert.equal(appJwt(1, pem).split('.').length, 3);
+});
+
+test('ignores the try-branch run on the dark base sha (branch creation push)', async () => {
+  const gh = fakeGh(), d = tmp();
+  await handle('workflow_run', ev('main', 'failure'), opts(gh, d));
+  const n = writes(gh).length;
+  const out = await handle('workflow_run', ev('lit-fixer/try-1', 'failure', { head_sha: 'abc' }), opts(gh, d));
+  assert.equal(out.ignored, 'run is not for the fix commit');
+  assert.equal(writes(gh).length, n);
+  const lit = await handle('workflow_run', ev('lit-fixer/try-1', 'success'), opts(gh, d));
+  assert.ok(lit.pr);
 });
