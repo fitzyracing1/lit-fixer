@@ -57,3 +57,7 @@ npm test
 ## License
 
 MIT, Copyright (c) 2026 Joshua Almeida.
+
+## Plans
+
+This project is free, and its license stays as is. See plans and pricing at https://lit-fixer-production.up.railway.app/pricing, or support it through [GitHub Sponsors](https://github.com/sponsors/fitzyracing1).
