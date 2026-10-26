@@ -70,7 +70,7 @@ test('server rejects unsigned webhook and serves / and /health', async () => {
     assert.equal(await (await fetch(base + '/health')).text(), 'lit\n');
     assert.match(await (await fetch(base + '/')).text(), /lit-fixer/);
     const pr = await (await fetch(base + '/pricing')).text();
-    assert.match(pr, /Pilot: free for early users/); assert.match(pr, /\$49\/mo/); assert.match(pr, /\$199\/mo/); assert.doesNotMatch(pr, /<script/);
+    assert.match(pr, /Pay through GitHub Sponsors/); assert.doesNotMatch(pr, /not live/); assert.match(pr, /github\.com\/sponsors\/fitzyracing1/); assert.match(pr, /lit-fixer-fitzy\/installations\/new/); assert.match(pr, /\$49\/mo/); assert.match(pr, /\$199\/mo/); assert.doesNotMatch(pr, /<script/);
     assert.match(await (await fetch(base + '/')).text(), /href="\/pricing"/);
     assert.match(await (await fetch(base + '/privacy')).text(), /Fix memory/);
     assert.match(await (await fetch(base + '/support')).text(), /Fitzyracing1@gmail\.com/);

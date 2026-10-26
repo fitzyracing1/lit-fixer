@@ -3,6 +3,7 @@
 // that event. The app never comments, opens issues, or messages anyone. Its only writes are
 // lit-fixer/try-<n> branches and, once a try is lit, one PR in the installed repo.
 const state = require('./state');
+const { admitRepo } = require('./plans');
 const { nextTry, onTryResult, PREFIX, conclusionIsLit } = require('./loop');
 
 function config(env = process.env) {
@@ -16,9 +17,20 @@ async function handle(event, payload, { gh, dataDir, cfg = config(), now = new D
   if (!run || !repo) return { ignored: 'no run' };
   const full = repo.full_name, def = repo.default_branch;
   const s = state.load(dataDir);
+  const account = payload.installation.account && payload.installation.account.login;
+  let runCfg = cfg;
+  if (account) {
+    const gate = admitRepo(s, account, full);
+    if (!gate.ok) {
+      state.save(s, dataDir);
+      log(`${full}: ignored, ${gate.plan.name} plan for ${account} allows ${gate.plan.repos} repo(s)`);
+      return { ignored: `plan repo limit (${gate.plan.name})` };
+    }
+    runCfg = { ...cfg, perDay: Math.min(cfg.perDay, gate.plan.perDay) };
+  }
   const rs = state.repo(s, full);
   const lit = conclusionIsLit(run.conclusion);
-  const ctx = { gh, cfg: { ...cfg, today: now.toISOString().slice(0, 10) }, log };
+  const ctx = { gh, cfg: { ...runCfg, today: now.toISOString().slice(0, 10) }, log };
   let out;
   if (run.head_branch === def) {
     rs.status = lit ? 'lit' : 'dark';

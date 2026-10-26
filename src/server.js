@@ -4,15 +4,37 @@ const { verifySignature } = require('./verify');
 const { handle } = require('./handler');
 const { client } = require('./github');
 const { HTML } = require('./home');
+const state = require('./state');
+const { applySponsorship } = require('./plans');
 const { PRICING, PRIVACY, SUPPORT } = require('./pages');
 
-function createServer({ secret = process.env.WEBHOOK_SECRET, gh = client(), dataDir, log } = {}) {
+function createServer({ secret = process.env.WEBHOOK_SECRET, sponsorsSecret = process.env.SPONSORS_WEBHOOK_SECRET, gh = client(), dataDir, log } = {}) {
   if (!secret) throw new Error('WEBHOOK_SECRET is required');
   return http.createServer((req, res) => {
     if (req.method === 'GET' && (req.url === '/health' || req.url === '/healthz')) { res.end('lit\n'); return; }
     if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) { res.setHeader('content-type', 'text/html; charset=utf-8'); res.end(HTML); return; }
     const pages = { '/pricing': PRICING, '/privacy': PRIVACY, '/support': SUPPORT };
     if (req.method === 'GET' && pages[req.url]) { res.setHeader('content-type', 'text/html; charset=utf-8'); res.end(pages[req.url]); return; }
+    if (req.method === 'POST' && req.url === '/sponsors-webhook') {
+      const chunks = [];
+      req.on('data', c => chunks.push(c));
+      req.on('end', () => {
+        const raw = Buffer.concat(chunks);
+        if (!verifySignature(sponsorsSecret, raw, req.headers['x-hub-signature-256'])) { res.statusCode = 401; res.end('bad signature\n'); return; }
+        try {
+          const ev = req.headers['x-github-event'];
+          let out = { ignored: ev || 'no event' };
+          if (ev === 'sponsorship') {
+            const s = state.load(dataDir);
+            out = applySponsorship(s, JSON.parse(raw.toString('utf8')));
+            state.save(s, dataDir);
+            if (out.sponsor) (log || console.log)(`sponsors: ${out.sponsor} -> ${out.plan}`);
+          }
+          res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(out));
+        } catch (e) { res.statusCode = 400; res.end(JSON.stringify({ error: e.message })); }
+      });
+      return;
+    }
     if (req.method !== 'POST' || req.url !== '/webhook') { res.statusCode = 404; res.end(); return; }
     const chunks = [];
     req.on('data', c => chunks.push(c));
