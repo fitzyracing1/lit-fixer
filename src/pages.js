@@ -6,12 +6,12 @@ const page = (title, body) => `<!doctype html><meta charset="utf-8"><meta name="
 ${body}`;
 
 const PRICING = page('lit-fixer pricing', `<h1>Pricing</h1>
-<p class="note"><strong>Pilot: free for early users.</strong> Billing is not live yet. No payment is collected and no card is asked for. The plans below show planned pricing.</p>
+<p class="note">Pay through GitHub Sponsors; your plan unlocks automatically for the GitHub account that sponsors.</p>
 <table>
-<tr><th>Plan</th><th>Price</th><th>What you get</th></tr>
-<tr><td>Free</td><td>$0</td><td>1 public repo, 3 tries per day</td></tr>
-<tr><td>Pro</td><td>$49/mo</td><td>Up to 10 repos</td></tr>
-<tr><td>Team</td><td>$199/mo</td><td>Unlimited repos, priority</td></tr>
+<tr><th>Plan</th><th>Price</th><th>What you get</th><th></th></tr>
+<tr><td>Free</td><td>$0</td><td>1 public repo, 3 tries per day</td><td><a href="https://github.com/apps/lit-fixer-fitzy/installations/new">Install free</a></td></tr>
+<tr><td>Pro</td><td>$49/mo</td><td>Up to 10 repos, 6 tries per day per repo</td><td><a href="https://github.com/sponsors/fitzyracing1">Sponsor $49/mo</a></td></tr>
+<tr><td>Team</td><td>$199/mo</td><td>Unlimited repos, priority</td><td><a href="https://github.com/sponsors/fitzyracing1">Sponsor $199/mo</a></td></tr>
 </table>
 <p>Every plan: fixes are tried on throwaway branches, and a pull request opens only once a try is lit. lit-fixer never merges.</p>`);
 
