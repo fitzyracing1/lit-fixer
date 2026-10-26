@@ -4,14 +4,15 @@ const { verifySignature } = require('./verify');
 const { handle } = require('./handler');
 const { client } = require('./github');
 const { HTML } = require('./home');
-const { PRICING } = require('./pages');
+const { PRICING, PRIVACY, SUPPORT } = require('./pages');
 
 function createServer({ secret = process.env.WEBHOOK_SECRET, gh = client(), dataDir, log } = {}) {
   if (!secret) throw new Error('WEBHOOK_SECRET is required');
   return http.createServer((req, res) => {
     if (req.method === 'GET' && (req.url === '/health' || req.url === '/healthz')) { res.end('lit\n'); return; }
     if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) { res.setHeader('content-type', 'text/html; charset=utf-8'); res.end(HTML); return; }
-    if (req.method === 'GET' && req.url === '/pricing') { res.setHeader('content-type', 'text/html; charset=utf-8'); res.end(PRICING); return; }
+    const pages = { '/pricing': PRICING, '/privacy': PRIVACY, '/support': SUPPORT };
+    if (req.method === 'GET' && pages[req.url]) { res.setHeader('content-type', 'text/html; charset=utf-8'); res.end(pages[req.url]); return; }
     if (req.method !== 'POST' || req.url !== '/webhook') { res.statusCode = 404; res.end(); return; }
     const chunks = [];
     req.on('data', c => chunks.push(c));
