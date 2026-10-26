@@ -1,0 +1,11 @@
+{
+  "name": "lit-fixer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GitHub App that tries safe fixes on throwaway branches when CI goes dark, and opens one PR only once a try is lit.",
+  "license": "MIT",
+  "author": "Joshua Almeida",
+  "type": "commonjs",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node src/server.js", "test": "node --test test/*.test.js" }
+}
