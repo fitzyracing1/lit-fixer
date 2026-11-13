@@ -7,5 +7,9 @@
   "author": "Joshua Almeida",
   "type": "commonjs",
   "engines": { "node": ">=20" },
-  "scripts": { "start": "node src/server.js", "test": "node --test test/*.test.js" }
+  "scripts": { "start": "node src/server.js", "test": "node --test test/*.test.js" },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/fitzyracing1"
+  }
 }
